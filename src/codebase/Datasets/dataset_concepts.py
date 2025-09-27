@@ -20,6 +20,15 @@ class MammoDataset(Dataset):
         self.image_encoder_type = args.image_encoder_type
         self.label = args.label
 
+        if args.label == "breast_birads":
+            self.df["breast_birads"] = self.df["breast_birads"].replace({
+                "BI-RADS 1": 0,
+                "BI-RADS 2": 1,
+                "BI-RADS 3": 2,
+                "BI-RADS 4": 3,
+                "BI-RADS 5": 4,
+            }).astype(int)
+
         print(transform)
 
     def __len__(self):
@@ -69,6 +78,9 @@ class MammoDataset(Dataset):
             'y': torch.tensor(data[self.label], dtype=torch.long),
             'img_path': str(img_path)
         }
+    
+    def get_labels(self):
+        return self.df['breast_birads'].to_list()
 
 
 def collator_mammo_dataset_w_concepts(batch):

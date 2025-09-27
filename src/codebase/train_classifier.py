@@ -14,13 +14,13 @@ import pickle
 def config():
     parser = argparse.ArgumentParser()
     parser.add_argument('--tensorboard-path', metavar='DIR',
-                        default='/restricted/projectnb/batmanlab/shawn24/PhD/Mammo-CLIP/log',
+                        default='./log',
                         help='path to tensorboard logs')
     parser.add_argument('--checkpoints', metavar='DIR',
-                        default='/restricted/projectnb/batmanlab/shawn24/PhD/Mammo-CLIP/checkpoints',
+                        default='./checkpoints',
                         help='path to checkpoints')
     parser.add_argument('--output_path', metavar='DIR',
-                        default='/restricted/projectnb/batmanlab/shawn24/PhD/Mammo-CLIP/out',
+                        default='./out',
                         help='path to output logs')
     parser.add_argument(
         "--data-dir",
@@ -65,6 +65,7 @@ def config():
     parser.add_argument("--epochs", default=9, type=int)
     parser.add_argument("--lr", default=5.0e-5, type=float)
     parser.add_argument("--weight-decay", default=1e-4, type=float)
+    parser.add_argument("--validation-percentage", default=0.1, type=float)
     parser.add_argument("--warmup-epochs", default=1, type=float)
     parser.add_argument("--img-size", nargs='+', default=[1520, 912])
     parser.add_argument("--device", default="cuda", type=str)

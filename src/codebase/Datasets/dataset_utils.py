@@ -7,6 +7,7 @@ import torchvision.transforms
 from albumentations import *
 from imgaug import augmenters as iaa
 from torch.utils.data import DataLoader, WeightedRandomSampler
+from torchsampler import ImbalancedDatasetSampler
 
 from .dataset_concepts import MammoDataset_concept, MammoDataset_concept_detection, \
     collater_for_concept_detection, MammoDataset, collator_mammo_dataset_w_concepts
@@ -117,6 +118,7 @@ def get_dataloader_concept_detector(args, train=True):
 def get_dataloader_RSNA(args):
     train_tfm = None
     val_tfm = None
+    test_tfm = None
     if args.arch.lower() == "swin_tiny_custom_norm" or args.arch.lower() == "swin_base_custom_norm":
         color_jitter_transform = torchvision.transforms.ColorJitter(
             brightness=0.1,
@@ -134,6 +136,10 @@ def get_dataloader_RSNA(args):
             torchvision.transforms.ToTensor(),
             normalize_transform
         ])
+        test_tfm = torchvision.transforms.Compose([
+            torchvision.transforms.ToTensor(),
+            normalize_transform
+        ])
     elif args.arch.lower() == "swin_tiny_custom" or args.arch.lower() == "swin_base_custom":
         train_tfm = Compose([
             ColorJitter(brightness=0.1, contrast=0.2, saturation=0.2, hue=0.1, p=1),
@@ -143,6 +149,7 @@ def get_dataloader_RSNA(args):
 
     train_dataset = MammoDataset(args=args, df=args.train_folds, transform=train_tfm)
     valid_dataset = MammoDataset(args=args, df=args.valid_folds, transform=val_tfm)
+    test_dataset = MammoDataset(args=args, df=args.test_folds, transform=test_tfm)
 
     if args.balanced_dataloader == "y":
         weight_path = args.output_path / f"random_sampler_weights_fold{str(args.cur_fold)}.pkl"
@@ -165,16 +172,20 @@ def get_dataloader_RSNA(args):
         )
     else:
         train_loader = DataLoader(
-            train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers, pin_memory=True,
-            drop_last=True, collate_fn=collator_mammo_dataset_w_concepts
+            train_dataset, batch_size=args.batch_size, num_workers=args.num_workers, pin_memory=True,
+            sampler=ImbalancedDatasetSampler(train_dataset), drop_last=True, collate_fn=collator_mammo_dataset_w_concepts
         )
 
     valid_loader = DataLoader(
         valid_dataset, batch_size=args.batch_size, shuffle=False, num_workers=args.num_workers, pin_memory=True,
         drop_last=False, collate_fn=collator_mammo_dataset_w_concepts
     )
+    test_loader = DataLoader(
+        test_dataset, batch_size=args.batch_size, shuffle=False, num_workers=args.num_workers, pin_memory=True,
+        drop_last=False, collate_fn=collator_mammo_dataset_w_concepts
+    )
 
-    return train_loader, valid_loader
+    return train_loader, valid_loader, test_loader
 
 
 def get_dataset(args, is_train_mode=True, is_classifier=True, train=True):
